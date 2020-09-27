@@ -1,9 +1,9 @@
 # Link: https://github.com/pylSER/Deep-Reinforcement-learning-Mountain-Car/blob/master/MountainCarV2.py
 
 import gym
-from keras import models
-from keras import layers
-from keras.optimizers import Adam
+from tensorflow.keras import models
+from tensorflow.keras import layers
+from tensorflow.keras.optimizers import Adam
 from collections import deque
 import random
 import numpy as np

@@ -2,6 +2,8 @@ from pathlib import Path
 import itertools
 import os
 import csv
+from collections import deque
+import random
 
 import gym
 import numpy as np
@@ -20,9 +22,16 @@ class EnvTrain:
         self.train_network = self.create_network()
         self.target_network = self.create_network()
         self.target_network.set_weights(self.train_network.get_weights())
+        ### Experience Replay
+        self.replay_buffer = deque(maxlen=20000)
+        self.batch_size = 32
+        ####
 
     def state_reshape(self, state):
-        return state.reshape(1, -1)
+        ### Experience Replay
+        return state
+        ####
+        # return state.reshape(1, -1)
 
     def create_network(self):
         model = models.Sequential()
@@ -44,40 +53,72 @@ class EnvTrain:
             self.train_network = models.load_model(load_path)
             self.target_network = models.load_model(load_path)
     
-    def get_action(self, state):
+    def get_action(self, state, greedy=False):
         self.epsilon = max(self.epsilon_min, self.epsilon)
-        if np.random.random() < self.epsilon:
+        if (np.random.random() < self.epsilon) and not greedy:
             action = self.env.action_space.sample()
         else:
+            ### Experience Replay
+            action = np.argmax(self.network_predict(self.train_network, state.reshape(1, -1))[0])
+            ####
             ### DDQN
-            action = np.argmax(self.network_predict(self.train_network, state)[0])
+            # action = np.argmax(self.network_predict(self.train_network, state)[0])
             ####
             # action = np.argmax(self.network_predict(self.target_network, state)[0])
 
         return action
 
-    def get_best_action(self, state):
-        self.epsilon = 0
-        self.epsilon_min = 0
-        return self.get_action(state)
-
     def update(self, state, action, next_state, reward, done):
-        ### DDQN
-        targets = self.network_predict(self.train_network, state)
-        ####
-        # targets = self.network_predict(self.target_network, state)
-        new_targets = self.network_predict(self.target_network, next_state)
+        ### Experience Replay
+        self.replay_buffer.append([state, action, next_state, reward, done])
 
-        if done:
-            targets[0][action] = reward
-        else:
-            Q_next = max(new_targets[0])
-            targets[0][action] = reward + self.gamma * Q_next
+        if len(self.replay_buffer) < self.batch_size:
+            return
 
-        ### DDQN
-        self.network_fit(self.train_network, state, targets)
+        samples = random.sample(self.replay_buffer, self.batch_size)
+
+        states = []
+        next_states = []
+        for sample in samples:
+            state, action, next_state, reward, done = sample
+            states.append(state)
+            next_states.append(next_state)
+
+        states = np.reshape(states, (self.batch_size, self.env.observation_space.shape[0]))
+        next_states = np.reshape(next_states, (self.batch_size, self.env.observation_space.shape[0]))
+        
+        targets = self.network_predict(self.train_network, states)
+        new_targets = self.network_predict(self.target_network, next_states)
+
+        for i, sample in enumerate(samples):
+            state, action, next_state, reward, done = sample
+            target = targets[i]
+
+            if done:
+                target[action] = reward
+            else:
+                Q_next = max(new_targets[i])
+                target[action] = reward + self.gamma * Q_next
+
+        self.network_fit(self.train_network, states, targets)
         ####
-        # self.network_fit(self.target_network, state, targets)
+
+        # ### DDQN
+        # targets = self.network_predict(self.train_network, state)
+        # ####
+        # # targets = self.network_predict(self.target_network, state)
+        # new_targets = self.network_predict(self.target_network, next_state)
+
+        # if done:
+        #     targets[0][action] = reward
+        # else:
+        #     Q_next = max(new_targets[0])
+        #     targets[0][action] = reward + self.gamma * Q_next
+
+        # ### DDQN
+        # self.network_fit(self.train_network, state, targets)
+        # ####
+        # # self.network_fit(self.target_network, state, targets)
 
     def train(self, episodes_num):
         for episode in range(1, episodes_num + 1):
@@ -125,13 +166,13 @@ def run_episode(env, agent, load_path=None):
     done = False
     while not done:
         env.render()
-        action = agent.get_best_action(state)
+        action = agent.get_action(state, greedy=True)
         state, reward, done, _ = env.step(action)
     env.close()
 
 if __name__ == '__main__':
     env = gym.make('CartPole-v1')
     agent = EnvTrain(env)
-    agent.train(episodes_num=1000)
-    # load_path = 'app/saves/episode200.h5'
-    # run_episode(env, agent)
+    # agent.train(episodes_num=1000)
+    load_path = 'app/saves/episode500.h5'
+    run_episode(env, agent)
