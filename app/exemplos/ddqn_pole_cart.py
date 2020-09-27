@@ -2,9 +2,9 @@
 
 import numpy as np
 import gym
-import keras
-from keras.models import Model
-from keras.layers import Dense, Input, Flatten, Conv2D, MaxPooling2D
+import tensorflow.keras
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Dense, Input, Flatten, Conv2D, MaxPooling2D
 import random
 from collections import deque
 import time
@@ -109,7 +109,7 @@ class DQN():
             for t in itertools.count(0, 1):
                 action = self.act(state)
                 next_state, reward, done, _ = self.environment.step(action)
-                self.environment.render()
+                # self.environment.render()
                 next_state = self.state_reshape(next_state)
                 self.remember(state, next_state, action, reward, done)
                 state = next_state
@@ -138,8 +138,8 @@ def evaluate_agent(dqn):
 
 
 if __name__ == '__main__':
-    game = "Pong-v0"
-    #game = "CartPole-v1"
+    # game = "Pong-v0"
+    game = "CartPole-v1"
     #load_path = 'ddqn_save/CartPole-v1_episode1000.h5'
     load_path = None
     dqn = DQN(game, num_of_episodes=1000, load_path=load_path)
