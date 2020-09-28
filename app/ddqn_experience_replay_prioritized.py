@@ -24,6 +24,11 @@ class DdqnExperienceReplayPrioritized(DdqnExperienceReplay):
 
         return loss
 
+    def load_network(self, load_path=None):
+        if load_path:
+            self.train_network = models.load_model(load_path, compile=False)
+            self.target_network = models.load_model(load_path, compile=False)
+
     def create_network(self):
         model = models.Sequential()
         state_shape = self.env.observation_space.shape

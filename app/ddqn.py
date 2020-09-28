@@ -1,6 +1,7 @@
 from dqn import Dqn
 
 import numpy as np
+from tensorflow.keras import models
 
 class Ddqn(Dqn):
     def __init__(self, env):
@@ -9,6 +10,11 @@ class Ddqn(Dqn):
         self.train_network = self.create_network()
         self.target_network = self.create_network()
         self.target_network.set_weights(self.train_network.get_weights())
+
+    def load_network(self, load_path=None):
+        if load_path:
+            self.train_network = models.load_model(load_path)
+            self.target_network = models.load_model(load_path)
 
     def get_action(self, state, greedy=False):
         self.epsilon = max(self.epsilon_min, self.epsilon)

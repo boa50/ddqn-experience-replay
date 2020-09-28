@@ -21,4 +21,4 @@ if __name__ == '__main__':
     agent = DdqnExperienceReplayPrioritized(env)
     # agent.train(episodes_num=1000)
     load_path = 'app/saves/experience_replay_prioritized/episode700.h5'
-    run_episode(env, agent)
+    run_episode(env, agent, load_path=load_path)
