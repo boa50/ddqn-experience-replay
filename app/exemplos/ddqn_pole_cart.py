@@ -99,7 +99,7 @@ class DQN():
                 target = reward + self.discount_factor * self.alternate_model.predict(next_state)[0][greedy_action]
             final_target = self.model.predict(state)
             final_target[0][action] = target
-            self.model.fit(state,final_target,verbose=0)
+            self.model.fit(state,final_target,verbose=0, ep)
 
     def play(self):
         for episode in range(1, self.num_of_episodes + 1):
