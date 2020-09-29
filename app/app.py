@@ -11,13 +11,17 @@ from ddqn_experience_replay_prioritized import DdqnExperienceReplayPrioritized
 def run_episode(env, agent, load_path=None):
     state = env.reset()
     agent.load_network(load_path)
+    rewards = 0
 
     done = False
     while not done:
         env.render()
         action = agent.get_action(state, greedy=True)
-        state, _, done, _ = env.step(action)
+        state, reward, done, _ = env.step(action)
+        rewards += reward
     env.close()
+
+    print('Recompensa: {:3.0f}'.format(rewards))
 
 def plot_stats(stats, smoothing_window=1, xlabel="", ylabel="", title=""):
     fig = plt.figure(figsize=(10,5))
@@ -34,9 +38,8 @@ def plot_stats(stats, smoothing_window=1, xlabel="", ylabel="", title=""):
 if __name__ == '__main__':
     env = gym.make('CartPole-v1')
     agent = DdqnExperienceReplayPrioritized(env)
-    # agent = Dqn(env)
     agent.train(episodes_num=1000)
-    # load_path = 'app/saves/experience_replay_prioritized/episode900.h5'
+    # load_path = 'app/saves/experience_replay_prioritized/episode800.h5'
     # run_episode(env, agent, load_path=load_path)
     
     # df = pd.read_csv('app/saves/dqn/metrics.csv')

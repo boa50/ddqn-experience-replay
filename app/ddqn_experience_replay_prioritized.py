@@ -16,7 +16,11 @@ class DdqnExperienceReplayPrioritized(DdqnExperienceReplay):
         self.save_path = 'app/saves/experience_replay_prioritized'
         self.priority = deque(maxlen=20000)
         self.alpha = 0.6
+        self.beta_min = 0.4
         self.importance = 1
+
+    def state_reshape(self, state):
+        return state.reshape(1, -1)
 
     def importance_loss(self):
         def loss(y_true, y_pred):
@@ -39,9 +43,9 @@ class DdqnExperienceReplayPrioritized(DdqnExperienceReplay):
         return model
     
     def buffer_insert(self, state, action, next_state, reward, done):
-        target_prediction = np.max(self.network_predict(self.target_network, next_state.reshape(1, -1))[0])
+        target_prediction = np.max(self.network_predict(self.target_network, next_state)[0])
         q_next = reward + self.gamma * target_prediction
-        q = self.network_predict(self.train_network, state.reshape(1, -1))[0][action]
+        q = self.network_predict(self.train_network, state)[0][action]
         p = (np.abs(q_next - q) + (np.e ** -10)) ** self.alpha
         self.priority.append(p)
         self.replay_buffer.append((state, action, next_state, reward, done))
@@ -64,10 +68,10 @@ class DdqnExperienceReplayPrioritized(DdqnExperienceReplay):
             state, action, next_state, reward, done = sample
             target = reward
             if not done:
-                target_prediction = np.max(self.network_predict(self.target_network, next_state.reshape(1, -1))[0])
+                target_prediction = np.max(self.network_predict(self.target_network, next_state)[0])
                 target = reward + self.gamma * target_prediction
-            final_target = self.network_predict(self.train_network, state.reshape(1, -1))
+            final_target = self.network_predict(self.train_network, state)
             final_target[0][action] = target
-            imp = importance ** (1 - self.epsilon)
-            self.importance = imp
-            self.network_fit(self.train_network, state.reshape(1, -1), final_target)
+            beta = max(self.beta_min, 1 - self.epsilon)
+            self.importance = importance ** beta
+            self.network_fit(self.train_network, state, final_target)

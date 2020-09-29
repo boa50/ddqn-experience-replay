@@ -73,7 +73,6 @@ class Dqn:
             state = self.env.reset()
             
             for i in itertools.count(0, 1):
-                # self.env.render()
                 action = self.get_action(state)
                 next_state, reward, done, _ = self.env.step(action)
                 self.update(state, action, next_state, reward, done)
