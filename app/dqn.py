@@ -1,8 +1,6 @@
-from pathlib import Path
 import itertools
-import os
-import csv
 import datetime
+from metrics import Metrics
 
 import numpy as np
 from tensorflow.keras import models
@@ -64,39 +62,13 @@ class Dqn:
 
     def done_update(self, episode, score):
         print('Episódio {:4d} \t pontuação = {:4d} \t epsilon = {:1.6f}'.format(episode, score, self.epsilon))
-        self.score_save(score)
-
-    def metric_save(self, path, metric):
-        metric_file = open(path, "a")
-        with metric_file:
-            writer = csv.writer(metric_file)
-            writer.writerow([metric])
-
-    def score_save(self, score):
-        path = self.save_path + '/scores.csv'
-        self.metric_save(path, score)
-
-    def time_save(self, time):
-        path = self.save_path + '/times.csv'
-        self.metric_save(path, time)
-
-    def create_paths(self):
-        path = Path(self.save_path)
-        if not path.exists():
-            path.mkdir(parents=True)
-        path = self.save_path + '/scores.csv'
-        if not os.path.exists(path):
-            with open(path, "w"):
-                pass
-        path = self.save_path + '/times.csv'
-        if not os.path.exists(path):
-            with open(path, "w"):
-                pass
 
     def train(self, episodes_num):
-        self.create_paths()
+        metrics = Metrics(self.save_path)
+        metrics.save(['score', 'exec_time'])
 
         for episode in range(1, episodes_num + 1):
+            score = 0
             begin_time = datetime.datetime.now()
             state = self.env.reset()
             
@@ -109,13 +81,14 @@ class Dqn:
 
                 if done:
                     self.done_update(episode, i)
+                    score = i
                     break
 
             self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
             exec_time = datetime.datetime.now() - begin_time
-            self.time_save(exec_time)
+            metrics.save([score, exec_time.seconds])
 
             if episode % 100 == 0:
-                self.target_network.save(str(path / ('episode' + str(episode) + '.h5')))
+                self.target_network.save(self.save_path + '/episode' + str(episode) + '.h5')
 
         env.close()

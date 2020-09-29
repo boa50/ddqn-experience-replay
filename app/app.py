@@ -19,23 +19,25 @@ def run_episode(env, agent, load_path=None):
         state, _, done, _ = env.step(action)
     env.close()
 
-def plot_stats(stats, smoothing_window=10):
+def plot_stats(stats, smoothing_window=1, xlabel="", ylabel="", title=""):
     fig = plt.figure(figsize=(10,5))
-    # stats_smoothed = pd.Series(stats).rolling(smoothing_window, min_periods=smoothing_window).mean()
-    # plt.plot(stats_smoothed)
-    plt.plot(stats)
-    plt.xlabel("")
-    plt.ylabel("")
-    plt.title("")
+    if smoothing_window > 1:
+        stats_smoothed = pd.Series(stats).rolling(smoothing_window, min_periods=smoothing_window).mean()
+        plt.plot(stats_smoothed)
+    else:
+        plt.plot(stats)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(title)
     plt.show()
 
 if __name__ == '__main__':
-    # env = gym.make('CartPole-v1')
-    # agent = DdqnExperienceReplayPrioritized(env)
+    env = gym.make('CartPole-v1')
+    agent = DdqnExperienceReplayPrioritized(env)
     # agent = Dqn(env)
-    # agent.train(episodes_num=1000)
-    # load_path = 'app/saves/experience_replay_prioritized/episode700.h5'
+    agent.train(episodes_num=1000)
+    # load_path = 'app/saves/experience_replay_prioritized/episode900.h5'
     # run_episode(env, agent, load_path=load_path)
-
-    df = pd.read_csv('app/saves/dqn/scores.csv', header=None, names=['sc'])
-    plot_stats(df['sc'])
+    
+    # df = pd.read_csv('app/saves/dqn/metrics.csv')
+    # plot_stats(df['exec_time'], xlabel="x", ylabel="y", title="title")
