@@ -2,6 +2,7 @@ from pathlib import Path
 import itertools
 import os
 import csv
+import datetime
 
 import numpy as np
 from tensorflow.keras import models
@@ -65,22 +66,38 @@ class Dqn:
         print('Episódio {:4d} \t pontuação = {:4d} \t epsilon = {:1.6f}'.format(episode, score, self.epsilon))
         self.score_save(score)
 
+    def metric_save(self, path, metric):
+        metric_file = open(path, "a")
+        with metric_file:
+            writer = csv.writer(metric_file)
+            writer.writerow([metric])
+
     def score_save(self, score):
+        path = self.save_path + '/scores.csv'
+        self.metric_save(path, score)
+
+    def time_save(self, time):
+        path = self.save_path + '/times.csv'
+        self.metric_save(path, time)
+
+    def create_paths(self):
+        path = Path(self.save_path)
+        if not path.exists():
+            path.mkdir(parents=True)
         path = self.save_path + '/scores.csv'
         if not os.path.exists(path):
             with open(path, "w"):
                 pass
-        scores_file = open(path, "a")
-        with scores_file:
-            writer = csv.writer(scores_file)
-            writer.writerow([score])
+        path = self.save_path + '/times.csv'
+        if not os.path.exists(path):
+            with open(path, "w"):
+                pass
 
     def train(self, episodes_num):
-        path = Path(self.save_path)
-        if not path.exists():
-            path.mkdir(parents=True)
+        self.create_paths()
 
         for episode in range(1, episodes_num + 1):
+            begin_time = datetime.datetime.now()
             state = self.env.reset()
             
             for i in itertools.count(0, 1):
@@ -95,6 +112,8 @@ class Dqn:
                     break
 
             self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
+            exec_time = datetime.datetime.now() - begin_time
+            self.time_save(exec_time)
 
             if episode % 100 == 0:
                 self.target_network.save(str(path / ('episode' + str(episode) + '.h5')))

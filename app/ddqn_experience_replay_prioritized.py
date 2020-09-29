@@ -69,6 +69,5 @@ class DdqnExperienceReplayPrioritized(DdqnExperienceReplay):
             final_target = self.network_predict(self.train_network, state.reshape(1, -1))
             final_target[0][action] = target
             imp = importance ** (1 - self.epsilon)
-            # imp = np.reshape(imp, 1)
             self.importance = imp
             self.network_fit(self.train_network, state.reshape(1, -1), final_target)

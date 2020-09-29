@@ -18,7 +18,8 @@ def run_episode(env, agent, load_path=None):
 
 if __name__ == '__main__':
     env = gym.make('CartPole-v1')
-    agent = DdqnExperienceReplayPrioritized(env)
-    # agent.train(episodes_num=1000)
-    load_path = 'app/saves/experience_replay_prioritized/episode700.h5'
-    run_episode(env, agent, load_path=load_path)
+    # agent = DdqnExperienceReplayPrioritized(env)
+    agent = Dqn(env)
+    agent.train(episodes_num=1000)
+    # load_path = 'app/saves/experience_replay_prioritized/episode700.h5'
+    # run_episode(env, agent, load_path=load_path)
